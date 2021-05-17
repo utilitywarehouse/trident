@@ -92,6 +92,9 @@ var (
 	metricsPort    = flag.String("metrics_port", "8001", "Storage orchestrator metrics port")
 	enableMetrics  = flag.Bool("metrics", false, "Enable metrics interface")
 
+	// Multipathd
+	mustUseMultipath = flag.Bool("must_use_multipath", false, "Mandatory multipathd for volume mounts. If set to true will only try to mount multipathd targets")
+
 	storeClient      persistentstore.Client
 	enableKubernetes bool
 	enableDocker     bool
@@ -275,7 +278,7 @@ func main() {
 
 	processCmdLineArgs()
 
-	orchestrator := core.NewTridentOrchestrator(storeClient)
+	orchestrator := core.NewTridentOrchestrator(storeClient, *mustUseMultipath)
 
 	// Create HTTP metrics frontend
 	if *enableMetrics {
@@ -382,7 +385,7 @@ func main() {
 			csiFrontend, err = csi.NewControllerPlugin(*csiNodeName, *csiEndpoint, *aesKey, orchestrator, &hybridPlugin)
 		case csi.CSINode:
 			csiFrontend, err = csi.NewNodePlugin(*csiNodeName, *csiEndpoint, *httpsCACert, *httpsClientCert,
-				*httpsClientKey, *aesKey, orchestrator, *csiUnsafeNodeDetach, *nodePrep)
+				*httpsClientKey, *aesKey, orchestrator, *csiUnsafeNodeDetach, *nodePrep, *mustUseMultipath)
 			enableMutualTLS = false
 			handler = rest.NewNodeRouter(csiFrontend)
 		case csi.CSIAllInOne:

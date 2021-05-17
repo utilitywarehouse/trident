@@ -928,7 +928,7 @@ func (p *Plugin) nodeStageISCSIVolume(
 	}
 
 	// Perform the login/rescan/discovery/(optionally)format, mount & get the device back in the publish info
-	if err := utils.AttachISCSIVolume(ctx, req.VolumeContext["internalName"], "", publishInfo); err != nil {
+	if err := utils.AttachISCSIVolume(ctx, req.VolumeContext["internalName"], "", publishInfo, p.mustUseMultipath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

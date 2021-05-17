@@ -55,6 +55,7 @@ type Plugin struct {
 	opCache sync.Map
 
 	nodeIsRegistered bool
+	mustUseMultipath bool
 }
 
 func NewControllerPlugin(
@@ -105,21 +106,22 @@ func NewControllerPlugin(
 
 func NewNodePlugin(
 	nodeName, endpoint, caCert, clientCert, clientKey, aesKeyFile string, orchestrator core.Orchestrator,
-	unsafeDetach, nodePrep bool,
+	unsafeDetach, nodePrep, mustUseMultipath bool,
 ) (*Plugin, error) {
 
 	ctx := GenerateRequestContext(context.Background(), "", ContextSourceInternal)
 
 	p := &Plugin{
-		orchestrator: orchestrator,
-		name:         Provisioner,
-		nodeName:     nodeName,
-		version:      tridentconfig.OrchestratorVersion.ShortString(),
-		endpoint:     endpoint,
-		role:         CSINode,
-		unsafeDetach: unsafeDetach,
-		opCache:      sync.Map{},
-		nodePrep:     &utils.NodePrep{Enabled: nodePrep},
+		orchestrator:     orchestrator,
+		name:             Provisioner,
+		nodeName:         nodeName,
+		version:          tridentconfig.OrchestratorVersion.ShortString(),
+		endpoint:         endpoint,
+		role:             CSINode,
+		unsafeDetach:     unsafeDetach,
+		opCache:          sync.Map{},
+		nodePrep:         &utils.NodePrep{Enabled: nodePrep},
+		mustUseMultipath: mustUseMultipath,
 	}
 
 	// Initialize node prep statuses

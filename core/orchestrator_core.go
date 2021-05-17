@@ -79,21 +79,23 @@ type TridentOrchestrator struct {
 	txnMonitorTicker  *time.Ticker
 	txnMonitorChannel chan struct{}
 	txnMonitorStopped bool
+	mustUseMultipath  bool
 }
 
 // NewTridentOrchestrator returns a storage orchestrator instance
-func NewTridentOrchestrator(client persistentstore.Client) *TridentOrchestrator {
+func NewTridentOrchestrator(client persistentstore.Client, mustUseMultipath bool) *TridentOrchestrator {
 	return &TridentOrchestrator{
-		backends:       make(map[string]*storage.Backend), // key is UUID, not name
-		volumes:        make(map[string]*storage.Volume),
-		frontends:      make(map[string]frontend.Plugin),
-		storageClasses: make(map[string]*storageclass.StorageClass),
-		nodes:          make(map[string]*utils.Node),
-		snapshots:      make(map[string]*storage.Snapshot), // key is ID, not name
-		mutex:          &sync.Mutex{},
-		storeClient:    client,
-		bootstrapped:   false,
-		bootstrapError: utils.NotReadyError(),
+		backends:         make(map[string]*storage.Backend), // key is UUID, not name
+		volumes:          make(map[string]*storage.Volume),
+		frontends:        make(map[string]frontend.Plugin),
+		storageClasses:   make(map[string]*storageclass.StorageClass),
+		nodes:            make(map[string]*utils.Node),
+		snapshots:        make(map[string]*storage.Snapshot), // key is ID, not name
+		mutex:            &sync.Mutex{},
+		storeClient:      client,
+		bootstrapped:     false,
+		bootstrapError:   utils.NotReadyError(),
+		mustUseMultipath: mustUseMultipath,
 	}
 }
 
@@ -1087,7 +1089,7 @@ func (o *TridentOrchestrator) updateBackendByBackendUUID(
 			}).Error("Cannot update backend created using TridentBackendConfig CR; please update the" +
 				" TridentBackendConfig CR instead.")
 
-			return nil, fmt.Errorf("cannot update backend '%v' created using TridentBackendConfig CR; please update" +
+			return nil, fmt.Errorf("cannot update backend '%v' created using TridentBackendConfig CR; please update"+
 				" the TridentBackendConfig CR", backendName)
 		}
 	}
@@ -1111,8 +1113,8 @@ func (o *TridentOrchestrator) updateBackendByBackendUUID(
 				"invalidConfigRef":  callingConfigRef,
 			}).Errorf("Backend update initiated using an invalid ConfigRef.")
 			return nil, utils.UnsupportedConfigError(fmt.Errorf(
-				"backend '%v' update initiated using an invalid configRef, it is associated with configRef " +
-				"'%v' and not '%v'", originalBackend.Name, originalConfigRef, callingConfigRef))
+				"backend '%v' update initiated using an invalid configRef, it is associated with configRef "+
+					"'%v' and not '%v'", originalBackend.Name, originalConfigRef, callingConfigRef))
 		}
 	}
 
@@ -1514,7 +1516,7 @@ func (o *TridentOrchestrator) deleteBackendByBackendUUID(ctx context.Context, ba
 			}).Error("Cannot delete backend created using TridentBackendConfig CR; delete the TridentBackendConfig" +
 				" CR first.")
 
-			return fmt.Errorf("cannot delete backend '%v' created using TridentBackendConfig CR; delete the" +
+			return fmt.Errorf("cannot delete backend '%v' created using TridentBackendConfig CR; delete the"+
 				" TridentBackendConfig CR first", backendName)
 		}
 	}
@@ -2965,7 +2967,7 @@ func (o *TridentOrchestrator) AttachVolume(
 	if publishInfo.FilesystemType == "nfs" {
 		return utils.AttachNFSVolume(ctx, volumeName, mountpoint, publishInfo)
 	} else {
-		return utils.AttachISCSIVolume(ctx, volumeName, mountpoint, publishInfo)
+		return utils.AttachISCSIVolume(ctx, volumeName, mountpoint, publishInfo, o.mustUseMultipath)
 	}
 }
 
