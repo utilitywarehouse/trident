@@ -80,7 +80,7 @@ func AttachNFSVolume(ctx context.Context, name, mountpoint string, publishInfo *
 // It may be assumed that this method always runs on the host to which the volume will be attached.  If the mountpoint
 // parameter is specified, the volume will be mounted.  The device path is set on the in-out publishInfo parameter
 // so that it may be mounted later instead.
-func AttachISCSIVolume(ctx context.Context, name, mountpoint string, publishInfo *VolumePublishInfo) error {
+func AttachISCSIVolume(ctx context.Context, name, mountpoint string, publishInfo *VolumePublishInfo, mustUseMultipath bool) error {
 
 	Logc(ctx).Debug(">>>> osutils.AttachISCSIVolume")
 	defer Logc(ctx).Debug("<<<< osutils.AttachISCSIVolume")
@@ -200,7 +200,7 @@ func AttachISCSIVolume(ctx context.Context, name, mountpoint string, publishInfo
 		return err
 	}
 
-	err = waitForMultipathDeviceForLUN(ctx, lunID, targetIQN)
+	err = waitForMultipathDeviceForLUN(ctx, lunID, targetIQN, mustUseMultipath)
 	if err != nil {
 		return err
 	}
@@ -802,7 +802,7 @@ func getDeviceInfoForMountPath(ctx context.Context, mountpath string) (*ScsiDevi
 }
 
 // waitForMultipathDeviceForLUN
-func waitForMultipathDeviceForLUN(ctx context.Context, lunID int, iSCSINodeName string) error {
+func waitForMultipathDeviceForLUN(ctx context.Context, lunID int, iSCSINodeName string, mustUseMultipath bool) error {
 
 	fields := log.Fields{
 		"lunID":         lunID,
@@ -823,20 +823,20 @@ func waitForMultipathDeviceForLUN(ctx context.Context, lunID int, iSCSINodeName 
 		return err
 	}
 
-	waitForMultipathDeviceForDevices(ctx, devices)
+	waitForMultipathDeviceForDevices(ctx, devices, mustUseMultipath)
 	return nil
 }
 
 // waitForMultipathDeviceForDevices accepts a list of sd* device names and waits until
 // a multipath device is present for at least one of those.  It returns the name of the
 // multipath device, or an empty string if multipathd isn't running or there is only one path.
-func waitForMultipathDeviceForDevices(ctx context.Context, devices []string) string {
+func waitForMultipathDeviceForDevices(ctx context.Context, devices []string, mustUseMultipath bool) string {
 
 	fields := log.Fields{"devices": devices}
 	Logc(ctx).WithFields(fields).Debug(">>>> osutils.waitForMultipathDeviceForDevices")
 	defer Logc(ctx).WithFields(fields).Debug("<<<< osutils.waitForMultipathDeviceForDevices")
 
-	if len(devices) <= 1 {
+	if !mustUseMultipath && len(devices) <= 1 {
 		Logc(ctx).Debugf("Skipping multipath discovery, %d device(s) specified.", len(devices))
 		return ""
 	} else if !multipathdIsRunning(ctx) {
