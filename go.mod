@@ -33,9 +33,9 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vishvananda/netlink v1.1.0
 	github.com/zcalusic/sysinfo v0.0.0-20210226105846-b810d137e525
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // github.com/golang/crypto
+	golang.org/x/crypto v0.1.0 // github.com/golang/crypto
 	golang.org/x/oauth2 v0.0.0-20210413134643-5e61552d6c78 // github.com/golang/oauth2
-	golang.org/x/sys v0.0.0-20210412220455-f1c623a9e750 // github.com/golang/sys
+	golang.org/x/sys v0.1.0 // github.com/golang/sys
 	google.golang.org/grpc v1.37.0 // github.com/grpc/grpc-go
 	k8s.io/api v0.21.0 // github.com/kubernetes/api
 	k8s.io/apiextensions-apiserver v0.21.0 // github.com/kubernetes/apiextensions-apiserver
